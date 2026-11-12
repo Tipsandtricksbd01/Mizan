@@ -1,0 +1,89 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; }
+    #ttl-line {
+      position: absolute;
+      left: 510px;
+      top: 437px;
+      width: 900px;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--ink, #f2ede4);
+    }
+    #ttl-word {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 400px;
+      text-align: center;
+      font-family: "Outfit", sans-serif;
+      font-weight: 700;
+      font-size: 190px;
+      line-height: 1;
+      letter-spacing: 0.2em;
+      padding-left: 0.2em;
+      color: var(--ink, #f2ede4);
+    }
+    #ttl-word span { display: inline-block; }
+    #ttl-tag {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 690px;
+      text-align: center;
+      font-family: "Inter", sans-serif;
+      font-weight: 400;
+      font-size: 46px;
+      color: var(--ink, #f2ede4);
+      opacity: 0.85;
+    }
+    #ttl-tag span { display: inline-block; margin: 0 0.12em; }
+    #ttl-tag .hl { color: var(--accent, #d9a441); }
+  </style>
+  <div id="root" data-composition-id="title" data-width="1920" data-height="1080">
+    <div id="ttl-line"></div>
+    <h1 id="ttl-word" aria-label="MIZAN"><span>M</span><span>I</span><span>Z</span><span>A</span><span>N</span></h1>
+    <p id="ttl-tag"><span>Built</span><span>on</span><span class="hl">balance.</span></p>
+  </div>
+  <script>
+    // Variables: rebuild the letters and words once at init, before the timeline
+    const vars = (window.__hyperframes && window.__hyperframes.getVariables && window.__hyperframes.getVariables()) || {};
+    const root = document.querySelector('[data-composition-id="title"]');
+    if (vars.accent) root.style.setProperty("--accent", vars.accent);
+    if (vars.title) {
+      const w = root.querySelector("#ttl-word");
+      w.setAttribute("aria-label", vars.title);
+      w.innerHTML = [...vars.title].map((c) => `<span>${c === " " ? "&nbsp;" : c}</span>`).join("");
+    }
+    if (vars.tagline) {
+      const words = vars.tagline.trim().split(/\s+/);
+      root.querySelector("#ttl-tag").innerHTML = words
+        .map((w, i) => `<span${i === words.length - 1 ? ' class="hl"' : ""}>${w}</span>`)
+        .join("");
+    }
+
+    const tl = gsap.timeline({ paused: true });
+    // The beam from the scale drops below the title, shortens and turns gold
+    tl.fromTo(
+      "#ttl-line",
+      { y: 0, scaleX: 1, backgroundColor: "#f2ede4" },
+      { y: 200, scaleX: 0.62, backgroundColor: getComputedStyle(root).getPropertyValue("--accent").trim() || "#d9a441", duration: 0.75, ease: "power2.inOut" },
+      0.05,
+    );
+    // Name: per letter, 0.1 s apart
+    tl.fromTo(
+      "#ttl-word span",
+      { opacity: 0, filter: "blur(10px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.3, ease: "power4.out", stagger: 0.1 },
+      0.5,
+    );
+    // Tagline: per word blur-in
+    tl.fromTo(
+      "#ttl-tag span",
+      { opacity: 0, filter: "blur(6px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.15, ease: "power4.out", stagger: 0.08 },
+      1.55,
+    );
+    window.__timelines["title"] = tl;
+  </script>
+</template>

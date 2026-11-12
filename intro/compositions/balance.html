@@ -1,0 +1,67 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; }
+    #bal-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    #bal-svg .ink { stroke: var(--ink, #f2ede4); stroke-width: 6; stroke-linecap: round; fill: none; }
+    #bal-svg .thin { stroke: var(--ink, #f2ede4); stroke-width: 2.5; stroke-linecap: round; fill: none; opacity: 0.7; }
+    #bal-svg .pan { fill: var(--ink, #f2ede4); }
+    #bal-svg .weight { fill: var(--accent, #d9a441); }
+  </style>
+  <div id="root" data-composition-id="balance" data-width="1920" data-height="1080">
+    <svg id="bal-svg" viewBox="0 0 1920 1080" data-layout-allow-overflow>
+      <line id="bal-base" class="ink" x1="850" y1="820" x2="1070" y2="820" />
+      <line id="bal-post" class="ink" x1="960" y1="440" x2="960" y2="820" />
+      <g id="bal-beam">
+        <line id="bal-bar" class="ink" x1="510" y1="440" x2="1410" y2="440" />
+        <g id="bal-left">
+          <g id="bal-left-in">
+            <path class="thin" d="M380 640 L510 440 L640 640" />
+            <path class="pan" d="M370 640 A140 54 0 0 0 650 640 Z" />
+            <circle id="bal-wl" class="weight" cx="510" cy="614" r="24" />
+          </g>
+        </g>
+        <g id="bal-right">
+          <g id="bal-right-in">
+            <path class="thin" d="M1280 640 L1410 440 L1540 640" />
+            <path class="pan" d="M1270 640 A140 54 0 0 0 1550 640 Z" />
+            <circle id="bal-wr" class="weight" cx="1410" cy="614" r="24" />
+          </g>
+        </g>
+      </g>
+      <circle id="bal-pivot" class="weight" cx="960" cy="440" r="12" />
+    </svg>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const BEAM = { svgOrigin: "960 440" };
+    const L = { svgOrigin: "510 440" };
+    const R = { svgOrigin: "1410 440" };
+
+    // Build: base, post, beam
+    tl.fromTo("#bal-base", { scaleX: 0, transformOrigin: "50% 50%" }, { scaleX: 1, duration: 0.5, ease: "expo.out" }, 0.2);
+    tl.fromTo("#bal-post", { scaleY: 0, transformOrigin: "50% 100%" }, { scaleY: 1, duration: 0.55, ease: "power4.out" }, 0.4);
+    tl.fromTo("#bal-pivot", { scale: 0, transformOrigin: "50% 50%" }, { scale: 1, duration: 0.4, ease: "back.out(1.6)" }, 0.75);
+    tl.fromTo("#bal-bar", { scaleX: 0, transformOrigin: "50% 50%" }, { scaleX: 1, duration: 0.65, ease: "expo.out" }, 0.85);
+
+    // Pans arrive
+    tl.fromTo(["#bal-left-in", "#bal-right-in"], { opacity: 0, y: -24 }, { opacity: 1, y: 0, duration: 0.5, ease: "power4.out", stagger: 0.08 }, 1.2);
+    tl.set(["#bal-wl", "#bal-wr"], { opacity: 0 }, 0);
+
+    // Left weight drops: the beam tips left
+    tl.fromTo("#bal-wl", { opacity: 0, y: -320 }, { opacity: 1, y: 0, duration: 0.38, ease: "power3.in", immediateRender: false }, 1.75);
+    tl.fromTo("#bal-beam", { rotation: 0, ...BEAM }, { rotation: -9, ...BEAM, duration: 0.55, ease: "back.out(1.4)" }, 2.13);
+    tl.fromTo("#bal-left", { rotation: 0, ...L }, { rotation: 9, ...L, duration: 0.55, ease: "back.out(1.4)" }, 2.13);
+    tl.fromTo("#bal-right", { rotation: 0, ...R }, { rotation: 9, ...R, duration: 0.55, ease: "back.out(1.4)" }, 2.13);
+
+    // Right weight drops: the beam settles level
+    tl.fromTo("#bal-wr", { opacity: 0, y: -320 }, { opacity: 1, y: 0, duration: 0.38, ease: "power3.in", immediateRender: false }, 2.62);
+    tl.to("#bal-beam", { rotation: 0, ...BEAM, duration: 0.9, ease: "elastic.out(1, 0.55)" }, 3.0);
+    tl.to("#bal-left", { rotation: 0, ...L, duration: 0.9, ease: "elastic.out(1, 0.55)" }, 3.0);
+    tl.to("#bal-right", { rotation: 0, ...R, duration: 0.9, ease: "elastic.out(1, 0.55)" }, 3.0);
+
+    // Everything but the beam leaves; the beam carries into the title
+    tl.to(["#bal-left-in", "#bal-right-in", "#bal-post", "#bal-base", "#bal-pivot"], { opacity: 0, filter: "blur(8px)", duration: 0.25, ease: "power3.in", stagger: 0.03 }, 4.05);
+
+    window.__timelines["balance"] = tl;
+  </script>
+</template>
