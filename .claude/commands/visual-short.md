@@ -20,16 +20,18 @@ Input: $ARGUMENTS
    - Character sheet prompt.
    - Prop sheet prompt for the hero prop (and its "after" version).
    - Per shot: keyframe image prompt + negative prompt, image-to-video motion prompt, clip length, whether to chain with first-last-frame, number of takes.
-   - Recommended model per step from SKILL §6 (open-source pick + paid alternative).
+   - Recommended model per step from SKILL §6 (free open-source only, with the exact script flags for the user's GPU).
 
    **D. Audio script**
-   - Music prompt (ready to paste into ACE-Step / Suno) with mood change points.
-   - SFX cue sheet table: time | sound | prompt for MMAudio/HunyuanVideo-Foley or library search words.
-   - Voice: either "none" or the exact lines/laughs with timecodes, emotion tags, and a Chatterbox/ElevenLabs voice description.
+   - Music prompt (ready to paste into ACE-Step 1.5) with mood change points.
+   - SFX cue sheet table: time | sound | prompt for Stable Audio Open / MMAudio (or a free CC0 file).
+   - Voice: either "none" or the exact lines/laughs with timecodes, emotion tags, and the engine (kokoro voice id or chatterbox exaggeration).
    - Mix targets (music volume vs SFX, -14 LUFS final).
 
-   **E. Production checklist** - the ordered steps (images -> video takes -> audio -> assemble with the ffmpeg commands from SKILL §7 -> QA §8) with the file names to save into `shorts/<slug>/`.
+   **E. plan.json** - also write `shorts/<kebab-slug>/plan.json` in the format of `.claude/skills/stickman-visual-short/scripts/shots.example.json` (style, negative, characters, shots with image_prompt/motion_prompt/duration/seed/edit_from, music, sfx, voice) so the Python scripts can run it directly.
 
-   **F. Post copy** - caption, 5 hashtags, thumbnail frame time.
+   **F. Production checklist** - the ordered steps (images -> video takes -> audio -> assemble with the exact `make_images.py` / `make_video.py` / `make_audio.py` / `assemble.py` commands from SKILL §7 -> QA §8) with the file names to save into `shorts/<slug>/`.
 
-4. Reply with a short summary and the path to PLAN.md. Do not generate media unless asked.
+   **G. Post copy** - caption, 5 hashtags, thumbnail frame time.
+
+4. Reply with a short summary and the path to PLAN.md. Use free tools only - never suggest paid services. Do not generate media unless asked.

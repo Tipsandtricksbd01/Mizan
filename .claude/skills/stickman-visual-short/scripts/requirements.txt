@@ -1,0 +1,18 @@
+# Free, open-source Python stack for stickman-visual-short (install on a machine/notebook with an NVIDIA GPU)
+# PyTorch first, matching your CUDA:  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+diffusers>=0.43.0        # Wan2.2, LTX-Video, FLUX.1-schnell, Qwen-Image(-Edit), Stable Audio Open
+transformers>=4.51
+accelerate
+sentencepiece
+protobuf
+ftfy
+imageio[ffmpeg]
+imageio-ffmpeg
+soundfile
+numpy
+pillow
+kokoro>=0.7              # free TTS, runs on CPU (also: apt install espeak-ng)
+chatterbox-tts           # free emotional TTS (laughs/cries), GPU recommended
+# Music (MIT): git clone https://github.com/ace-step/ACE-Step-1.5 && pip install -r ACE-Step-1.5/requirements.txt
+# Video->SFX (code MIT, weights non-commercial): git clone https://github.com/hkchengrex/MMAudio && pip install -e MMAudio
+# System: ffmpeg (apt install ffmpeg)

@@ -1,0 +1,40 @@
+{
+  "title": "Who Laughs Last - Rain Umbrella",
+  "fps": 30,
+  "out_size": [1080, 1920],
+  "style": "Vertical 9:16 2D cartoon illustration, thick clean black outlines, flat bright saturated colors, soft painted background. Stickman characters with pure white round heads, simple expressive faces, black stick arms and legs, black mitten hands. Side view, full body, both characters on the same ground line in the middle of the frame, big sky above, detailed ground below.",
+  "negative": "realistic, 3D render, photo, extra limbs, extra fingers, hair, nose, text, letters, watermark, logo, blurry, cropped feet, deformed face, camera shake",
+  "characters": {
+    "hero": "stickman wearing a plain green t-shirt",
+    "rival": "stickman wearing a plain blue t-shirt"
+  },
+  "shots": [
+    {
+      "id": "s1",
+      "duration": 3.0,
+      "image_prompt": "Dark stormy grey sky, heavy rain, wet city street with puddles and reflections. Left: {hero} walking, holding a red umbrella UPSIDE DOWN like a bowl collecting rain water, annoyed face. Right: {rival} walking under a normal yellow umbrella, laughing loudly with open mouth and pointing at the hero.",
+      "motion_prompt": "Static camera. Both stickmen walk in place with a bouncy cartoon walk. The blue-shirt stickman laughs and points. Heavy rain falls and fills the upside-down red umbrella, water splashes in puddles. Smooth 2D cartoon animation, consistent characters.",
+      "seed": 11
+    },
+    {
+      "id": "s2",
+      "duration": 8.0,
+      "image_prompt": "Bright blue sky with a big cartoon sun, hot cracked dry desert ground, sand dunes far away. Left: {hero} walking, holding the same red umbrella upside down full of water, a metal water tap fixed under it, filling a small metal mug, happy smile. Right: {rival} bent over, exhausted, sweating, tongue hanging out, very thirsty.",
+      "motion_prompt": "Static camera. The green-shirt stickman fills the mug from the tap, drinks and smiles happily. The blue-shirt stickman sweats, tears fall, he drops to his knees and then falls flat on the ground. Heat haze shimmers. Smooth 2D cartoon animation, consistent characters.",
+      "edit_from": "s1",
+      "seed": 22
+    }
+  ],
+  "music": {"prompt": "playful cartoon comedy music, pizzicato strings and ukulele, light percussion, 120 bpm, instrumental", "duration": 12, "volume": 0.30},
+  "sfx": [
+    {"t": 0.0, "dur": 3.0, "prompt": "heavy rain on a street with distant thunder", "vol": 0.7},
+    {"t": 2.8, "dur": 1.0, "prompt": "fast cartoon whoosh swoosh transition", "vol": 0.8},
+    {"t": 3.0, "dur": 8.0, "prompt": "hot desert wind and cicadas, quiet", "vol": 0.4},
+    {"t": 3.6, "dur": 2.0, "prompt": "water pouring from a tap into a metal mug", "vol": 0.9},
+    {"t": 9.6, "dur": 1.5, "prompt": "cartoon body falling thud on dirt then sad trombone wah wah", "vol": 1.0}
+  ],
+  "voice": [
+    {"t": 1.2, "text": "Ha ha ha ha!", "engine": "chatterbox", "exaggeration": 0.9, "vol": 1.0},
+    {"t": 5.4, "text": "Ahhh!", "engine": "kokoro", "voice": "am_adam", "vol": 0.9}
+  ]
+}

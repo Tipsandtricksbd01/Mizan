@@ -1,6 +1,6 @@
 ---
 name: stickman-visual-short
-description: Make a vertical 9:16 stickman cartoon "visual gag" short (8-30 s, no talking needed) like the rain-umbrella / desert-water reference - two round-head stickmen in colored shirts, a setup scene, a time-skip, a role-reversal payoff. Covers idea, video script, visual plan (image + image-to-video prompts), audio script (SFX, music, optional voice), the open-source GitHub models for each step, and the ffmpeg/HyperFrames assembly. Use for "stickman video", "cartoon visual short", "like this video", "who laughs last" style reels, or when /visual-short is run.
+description: Make a vertical 9:16 stickman cartoon "visual gag" short (8-30 s, no talking needed) like the rain-umbrella / desert-water reference - two round-head stickmen in colored shirts, a setup scene, a time-skip, a role-reversal payoff. Covers idea, video script, visual plan, audio script, and a FREE-only Python pipeline (FLUX/Qwen-Image -> Wan2.2/LTX-Video -> Chatterbox/Kokoro, Stable Audio/MMAudio, ACE-Step -> ffmpeg) with ready scripts. Use for "stickman video", "cartoon visual short", "like this video", "who laughs last" style reels, or when /visual-short is run.
 ---
 
 # Stickman Visual Short
@@ -34,10 +34,10 @@ Reference: `references/reference-contact-sheet.jpg` (20 frames across the 11 s s
 1. **Idea** -> one-line gag: "A does ___ (looks dumb), B mocks; LATER ___, A wins, B ___." Good themes: weather/season flip (rain->drought, summer->winter), saving vs spending, studying vs partying, planting a tree, building a roof, charging a phone, packing food. Keep it universal and wordless.
 2. **Script** (§3) -> 2-4 shots, 8-30 s, every beat with a time and an action you can SEE.
 3. **Visual plan** (§4) -> character sheet, one keyframe image per shot, one motion prompt per shot.
-4. **Generate images** (§6 models) -> character sheet first, then keyframes using the sheet as reference so faces/shirts/prop stay identical.
-5. **Image-to-video** -> each keyframe into a 5-10 s clip. Generate 3-4 takes per shot, keep the best.
-6. **Audio** (§5) -> SFX cue sheet + music bed (+ optional voice line / caption).
-7. **Assemble** (§7) -> cut, add audio, optional caption hook, export 1080x1920 MP4.
+4. **Generate images** (§6 models, `make_images.py`) -> character sheet first, then keyframes using the sheet as reference so faces/shirts/prop stay identical.
+5. **Image-to-video** (`make_video.py`) -> each keyframe into a 5-10 s clip. Generate 3-4 takes per shot, keep the best.
+6. **Audio** (§5, `make_audio.py`) -> SFX cue sheet + music bed (+ optional voice line / caption).
+7. **Assemble** (§7, `assemble.py`) -> cut, add audio, optional caption hook, export 1080x1920 MP4.
 8. **QA** (§8).
 
 Use the `/visual-short <idea>` command to produce steps 1-3 + the audio script in one file.
@@ -92,7 +92,7 @@ Static camera. Both stickmen walk in place to the right with a bouncy cartoon wa
 Smooth 2D cartoon animation, consistent characters, no camera movement, no new objects.
 ```
 
-Keep motion prompts to 1-3 actions per clip. For a long payoff (8 s+), make 2 clips: first clip's last frame -> second clip's start image (first-last-frame mode in Wan 2.2 / FramePack keeps continuity).
+Keep motion prompts to 1-3 actions per clip. For a long payoff (8 s+), make 2 clips: first clip's last frame -> second clip's start image (`make_video.py` does this chaining automatically for long shots).
 
 ## 5. Audio script template
 
@@ -104,7 +104,7 @@ VOICE (optional): none | one hook line | short laughs/grunts only (no language b
 SFX CUE SHEET
  time   | sound                              | source / prompt
  0.0    | rain loop heavy + distant thunder  | MMAudio/Foley or library
- 1.5    | mocking cartoon laugh "ha-ha-ha!"  | Chatterbox/ElevenLabs vocal or library
+ 1.5    | mocking cartoon laugh "ha-ha-ha!"  | Chatterbox (exaggeration 0.9) or CC0 file
  2.8    | whoosh / time-skip swoosh          | library
  3.0    | desert wind, cicadas, heat         | MMAudio prompt
  3.5    | water tap pouring into metal mug   | MMAudio from the clip
@@ -114,45 +114,62 @@ SFX CUE SHEET
 ```
 Put every SFX on the exact frame its action happens (1 frame after the picture is fine). Loudness: final mix about -14 LUFS, true peak -1 dBTP.
 
-## 6. Models & tools (open source on GitHub, checked Nov 2026)
+## 6. Free models (open source, GitHub + Python) - FREE ONLY, no paid tools
 
-Pick one per row. "GPU" = rough VRAM for 720p-ish output; use ComfyUI to run most of them with a node graph.
+Every step runs from Python with the scripts in `scripts/`. All weights download free from Hugging Face.
 
-| Step | Best open-source pick | Alternatives | Notes |
-|---|---|---|---|
-| Runner / UI | **Comfy-Org/ComfyUI** (~147k★) | - | Node workflows for all image/video models below. |
-| Wan in ComfyUI | **kijai/ComfyUI-WanVideoWrapper** (~6.8k★) | built-in Comfy Wan nodes | I2V, first-last-frame, LoRAs, low-VRAM tricks. |
-| Text/image -> image (keyframes, char sheet) | **QwenLM/Qwen-Image** / **Qwen-Image-2.1** | **black-forest-labs/flux** (FLUX.1 / Kontext), flux2 | Qwen-Image-Edit or Flux Kontext = edit a keyframe while keeping the same characters (best for consistency). |
-| Image -> video (main) | **Wan-Video/Wan2.2** (~18.6k★) | Wan2.1 | I2V-A14B (best quality, 48-80 GB or offload), TI2V-5B (720p, fits 24 GB). Very good at 2D cartoon motion. |
-| Image -> video (fast / with audio) | **Lightricks/LTX-2** (~10k★) | Lightricks/LTX-Video | Fast; LTX-2 can make synced audio too. |
-| Image -> video (alt) | **Tencent-Hunyuan/HunyuanVideo-1.5** | HunyuanVideo | Lightweight 8.3B, good motion. |
-| Image -> video (low VRAM / long) | **lllyasviel/FramePack** (~17k★) | kijai/ComfyUI-FramePackWrapper | Runs on ~6 GB, long clips, keeps the start frame's look. |
-| Video -> SFX (Foley) | **hkchengrex/MMAudio** | **Tencent-Hunyuan/HunyuanVideo-Foley**, kijai/ComfyUI-MMAudio | Feed the finished clip + a text prompt, get synced SFX. |
-| Music | **ace-step/ACE-Step-1.5** (~14.7k★) | facebookresearch/audiocraft (MusicGen) | Instrumental bed from a text prompt; set length to the video length. |
-| Voice / laughs (optional) | **resemble-ai/chatterbox** (~27.8k★) | SWivid/F5-TTS, hexgrad/kokoro, QwenAudio/CosyVoice | Chatterbox has emotion control (good for laughs/cries). |
-| Captions / timing | **m-bain/whisperX** | openai/whisper | Word timestamps if you add a voice line. |
-| Upscale | **xinntao/Real-ESRGAN** (anime model `realesr-animevideov3`) | - | 720p -> 1080x1920, crisp outlines. |
-| Frame interpolation | **hzwer/Practical-RIFE** | - | 16/24 fps model output -> smooth 30/60 fps. |
-| Edit / titles / render | **heygen-com/hyperframes** (installed in this repo: `/hyperframes`) | ffmpeg, CapCut, DaVinci Resolve | HTML -> video, captions, "3 MONTHS LATER" cards, audio mix. |
+| Step | Model (GitHub) | Python | Licence (for monetised videos) | VRAM |
+|---|---|---|---|---|
+| Keyframe images | **FLUX.1-schnell** (black-forest-labs/flux) | diffusers `FluxPipeline` | Apache-2.0 - commercial OK | ~12 GB w/ offload |
+| Keyframe images (better) | **Qwen-Image** (QwenLM/Qwen-Image) | diffusers `QwenImagePipeline` | Apache-2.0 | 24 GB+ w/ offload, 64 GB RAM |
+| Same characters in shot 2 | **Qwen-Image-Edit-2509** | diffusers `QwenImageEditPlusPipeline` | Apache-2.0 | 24 GB+ w/ offload |
+| Image -> video (default) | **Wan2.2-TI2V-5B** (Wan-Video/Wan2.2) | diffusers `WanImageToVideoPipeline` | Apache-2.0 | 24 GB (less with offload, slower) |
+| Image -> video (best) | **Wan2.2-I2V-A14B** | same | Apache-2.0 | 48-80 GB |
+| Image -> video (fast / small GPU) | **LTX-Video 2B** (Lightricks/LTX-Video) | diffusers `LTXImageToVideoPipeline` | LTX open licence (free) | 12-16 GB |
+| Image -> video (6 GB GPU, long) | **FramePack** (lllyasviel/FramePack) | its own Gradio app | Apache-2.0 | 6 GB |
+| Voice / laughs / cries | **Chatterbox** (resemble-ai/chatterbox) | `pip install chatterbox-tts` | MIT | GPU (CPU slow) |
+| Short voice lines | **Kokoro-82M** (hexgrad/kokoro) | `pip install kokoro` | Apache-2.0 | **CPU is fine** |
+| Sound effects from text | **Stable Audio Open 1.0** | diffusers `StableAudioPipeline` | Stability Community (free < $1M/yr), needs free HF login | 8 GB |
+| Sound effects synced to video | **MMAudio** (hkchengrex/MMAudio) | `demo.py` | code MIT, **weights non-commercial** | 6-8 GB |
+| Music | **ACE-Step 1.5** (ace-step/ACE-Step-1.5) | `acestep` Python API | MIT - commercial OK | 4-8 GB |
+| Upscale (optional) | **Real-ESRGAN** `realesr-animevideov3` | `realesrgan` / ncnn binary | BSD-3 | any |
+| Smoother motion (optional) | **Practical-RIFE** (hzwer/Practical-RIFE) | `inference_video.py` | MIT | any |
+| Cut, mix, export | **ffmpeg** | `scripts/assemble.py` | free | CPU |
+| Titles / captions (optional) | **HyperFrames** (heygen-com/hyperframes, in this repo) | `npx hyperframes` | Apache-2.0 | CPU |
 
-Paid shortcuts (if no GPU): images - Midjourney, GPT image, Gemini "Nano Banana", Ideogram; image-to-video - Kling, Veo 3, Hailuo/MiniMax, Runway, Sora; voice/SFX - ElevenLabs; music - Suno/Udio. Same prompts work.
+If you will earn money from the videos, use the "commercial OK" rows (FLUX-schnell, Qwen, Wan2.2, Chatterbox, Kokoro, ACE-Step) and make SFX with Stable Audio Open or free CC0 sound files (put `"file": "x.wav"` in the plan). Avoid MMAudio and MusicGen weights for monetised work (non-commercial).
 
-Hardware guide: no GPU -> use paid tools or cloud GPU (RunPod/Vast, 24-48 GB). 8-12 GB -> FramePack, Wan2.2 TI2V-5B with offload, LTX. 24 GB -> Wan2.2 TI2V-5B 720p, Qwen-Image fp8, Flux. 48-80 GB -> Wan2.2 A14B full quality.
+### What you need (all free)
 
-## 7. Assembly (ffmpeg, no GPU needed)
+1. **An NVIDIA GPU.** Options:
+   - Your own PC: RTX 3060 12 GB = LTX + FLUX-schnell + audio; RTX 3090/4090 24 GB = everything with Wan2.2-5B.
+   - **Kaggle Notebooks** (free, 2x T4 16 GB, ~30 GPU h/week, 29 GB RAM) - best free option. Use `--model ltx` or `--model wan5b --offload sequential --dtype fp16`, FLUX-schnell images.
+   - **Google Colab free** (T4 16 GB, 12 GB RAM) - works for LTX, FLUX-schnell (`--offload sequential`), Kokoro, Chatterbox, ACE-Step, Stable Audio. Too little RAM for Qwen-Image and Wan 14B.
+   - No GPU at all: only Kokoro voice and assemble.py run on CPU; image/video generation is not practical.
+2. **Python 3.10-3.12**, **ffmpeg**, `git`, ~60-100 GB free disk for model downloads (Kaggle/Colab: use one video model per session).
+3. **A free Hugging Face account** + `huggingface-cli login` (needed for Stable Audio Open; speeds up downloads).
+4. Install: `pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124` then `pip install -r scripts/requirements.txt`; `apt install ffmpeg espeak-ng`; clone ACE-Step-1.5 (music) and optionally MMAudio.
+
+## 7. Run the pipeline (Python)
+
+The whole video is described in one JSON file - copy `scripts/shots.example.json` (it is the rain/desert reference video) to `shorts/<slug>/plan.json` and edit it. `{hero}` / `{rival}` in prompts are replaced from `characters`. Output goes to `shorts/<slug>/build/`.
 
 ```bash
-# 1) scale every clip to 1080x1920, 30 fps, same codec
-for f in shot*.mp4; do ffmpeg -y -i "$f" -vf "scale=1080:1920:flags=lanczos,fps=30,setsar=1" -an -c:v libx264 -crf 18 -pix_fmt yuv420p "n_$f"; done
-# 2) join (hard cuts)
-printf "file '%s'\n" n_shot*.mp4 > list.txt && ffmpeg -y -f concat -safe 0 -i list.txt -c copy video.mp4
-# 3) mix music + sfx (sfx already placed on a timeline in sfx.wav) and normalize
-ffmpeg -y -i video.mp4 -i music.wav -i sfx.wav -filter_complex \
- "[1:a]volume=0.35[m];[2:a]volume=1.0[s];[m][s]amix=inputs=2:duration=first,loudnorm=I=-14:TP=-1[a]" \
- -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 192k -shortest final.mp4
-# place one SFX at 9.8 s:  -filter_complex "[1:a]adelay=9800|9800[x]"
+cd .claude/skills/stickman-visual-short/scripts
+P=../../../../shorts/<slug>/plan.json
+
+python make_images.py $P --takes 3                 # FLUX-schnell keyframes -> build/images/s1_take1..3.png
+python make_images.py $P --model qwen --edit       # (24 GB+) shot 2 edited from shot 1 = same characters
+#   look at the takes, copy the best one to build/images/<shot>.png
+python make_video.py  $P --takes 2                 # Wan2.2-5B clips  (--model ltx on T4 / 12 GB)
+#   watch build/clips/*_take*.mp4, copy the best to build/clips/<shot>.mp4
+python make_audio.py  $P voice                     # Kokoro / Chatterbox lines
+python make_audio.py  $P sfx                       # Stable Audio Open SFX   (or: --mmaudio ~/MMAudio)
+python make_audio.py  $P music --ace ~/ACE-Step-1.5
+python assemble.py    $P --card "3 MONTHS LATER" --card-at 2.8   # -> build/final.mp4 1080x1920 30fps -14 LUFS
 ```
-For on-screen text cards, captions, or a cleaner mix use HyperFrames (`/hyperframes`, `/media-use`) at 1080x1920.
+
+Tips: low VRAM -> `--offload sequential`; T4/older GPU -> `--dtype fp16` (if frames come out black, use `--dtype fp32` for the VAE-heavy step or switch to LTX); faster drafts -> `--steps 20`. A shot longer than one clip (Wan-5B: 5 s, LTX: 6.7 s, Wan-14B: 5 s) is chained automatically from the previous segment's last frame. FramePack (6 GB GPUs) is a separate app: load `build/images/<shot>.png`, paste the motion prompt, save the mp4 as `build/clips/<shot>.mp4`, then continue with the audio steps.
 
 ## 8. QA checklist
 
