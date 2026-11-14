@@ -103,7 +103,7 @@ VOICE (optional): none | one hook line | short laughs/grunts only (no language b
 
 SFX CUE SHEET
  time   | sound                              | source / prompt
- 0.0    | rain loop heavy + distant thunder  | MMAudio/Foley or library
+ 0.0    | rain loop heavy + distant thunder  | Stable Audio Open / MMAudio or CC0 file
  1.5    | mocking cartoon laugh "ha-ha-ha!"  | Chatterbox (exaggeration 0.9) or CC0 file
  2.8    | whoosh / time-skip swoosh          | library
  3.0    | desert wind, cicadas, heat         | MMAudio prompt
