@@ -1,0 +1,10 @@
+{
+  "name": "stickman-short",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "python3 tools/build.py && python3 tools/sound.py",
+    "check": "npx --yes hyperframes@0.9.38 check",
+    "render": "npx --yes hyperframes@0.9.38 render"
+  }
+}

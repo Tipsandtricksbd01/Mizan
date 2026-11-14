@@ -1,37 +1,24 @@
 ---
-description: Write the full plan for a stickman visual-gag short - video script, visual plan (image + image-to-video prompts) and audio script (music, SFX cue sheet, optional voice).
-argument-hint: [idea or topic | blank for 10 ideas] [length in s, default 12]
+description: Plan (and make) a stickman visual-gag short with Claude only - video script, visual plan, audio script, then the finished 9:16 MP4. No AI models, no GPU, no paid tools.
+argument-hint: [idea | blank for 10 ideas] [length in s, default 12] [make = also build the video]
 ---
 
-Use the `stickman-visual-short` skill (`.claude/skills/stickman-visual-short/SKILL.md`). Read it first and follow its style lock, templates and rules.
+Use the `stickman-visual-short` skill (`.claude/skills/stickman-visual-short/SKILL.md`). Read it first and follow its formula, style rules and templates. Everything is made by Claude in this container: art drawn with code (`template/tools/rig.py`), animation with GSAP in HyperFrames (`template/tools/build.py`), sound synthesized with numpy (`template/tools/sound.py`). Never suggest paid tools or AI image/video models.
 
 Input: $ARGUMENTS
 
-1. If the input is empty or only a broad topic, give **10 numbered gag ideas** (one line each: setup -> twist -> payoff, wordless, universal), then stop and ask which one to plan. Otherwise continue with the given idea.
-2. Default length 12 s (allowed 8-30 s), 1080x1920, 30 fps. Hero = green shirt, Rival = blue shirt unless the idea needs others.
-3. Write the plan to `shorts/<kebab-slug>/PLAN.md` with exactly these sections:
+1. If the input is empty or only a broad topic: give **10 numbered gag ideas** (one line each: setup -> twist -> payoff, wordless, universal, original), then stop and ask which one to make.
+2. Otherwise write `shorts/<kebab-slug>/PLAN.md` with:
 
-   **A. Concept** - title, hook title for the post, logline, why it is funny with sound off, target length.
+   **A. Concept** - title, post hook title, logline, why it is funny with the sound off, length (default 12 s, 8-30 s), 1080x1920 30 fps.
 
-   **B. Video script** - shot table (shot no., start-end s, location/weather, beat-by-beat actions with timecodes, on-screen text if any, transition). Follow the SKILL §3 rules.
+   **B. Video script** - shot table: shot, start-end s, place/weather, beat-by-beat visible actions with timecodes, transition (SKILL §3 rules).
 
-   **C. Visual plan**
-   - Style lock paragraph (copied from SKILL §1, adjusted only for this story).
-   - Character sheet prompt.
-   - Prop sheet prompt for the hero prop (and its "after" version).
-   - Per shot: keyframe image prompt + negative prompt, image-to-video motion prompt, clip length, whether to chain with first-last-frame, number of takes.
-   - Recommended model per step from SKILL §6 (free open-source only, with the exact script flags for the user's GPU).
+   **C. Visual plan** - per shot in the SKILL §4 format: background functions, each character (shirt colour, x, facing, pose, face, props, hand), every beat as rig moves (`walk`, `rotT`, `body`, `face`, `grow`), and which NEW drawing functions must be added to `rig.py` (new props, backgrounds, faces).
 
-   **D. Audio script**
-   - Music prompt (ready to paste into ACE-Step 1.5) with mood change points.
-   - SFX cue sheet table: time | sound | prompt for Stable Audio Open / MMAudio (or a free CC0 file).
-   - Voice: either "none" or the exact lines/laughs with timecodes, emotion tags, and the engine (kokoro voice id or chatterbox exaggeration).
-   - Mix targets (music volume vs SFX, -14 LUFS final).
+   **D. Audio script** - music (bpm, mood per shot, stop point), SFX cue sheet (time | what we hear | `sound.py` name, marking new ones to write), voice = wordless sounds only.
 
-   **E. plan.json** - also write `shorts/<kebab-slug>/plan.json` in the format of `.claude/skills/stickman-visual-short/scripts/shots.example.json` (style, negative, characters, shots with image_prompt/motion_prompt/duration/seed/edit_from, music, sfx, voice) so the Python scripts can run it directly.
+   **E. Post copy** - caption, 5 hashtags, thumbnail frame time.
 
-   **F. Production checklist** - the ordered steps (images -> video takes -> audio -> assemble with the exact `make_images.py` / `make_video.py` / `make_audio.py` / `assemble.py` commands from SKILL §7 -> QA §8) with the file names to save into `shorts/<slug>/`.
-
-   **G. Post copy** - caption, 5 hashtags, thumbnail frame time.
-
-4. Reply with a short summary and the path to PLAN.md. Use free tools only - never suggest paid services. Do not generate media unless asked.
+3. If the input contains `make` (or the person approves the plan), make the video exactly as SKILL §2 steps 3-10 say: copy the template, write the shots in `build.py`, add needed art/sounds, build, `check`, snapshot and LOOK, fix, render to `shorts/<slug>/renders/<slug>.mp4`, verify the MP4 frames and loudness, send the file to the person, commit and push.
+4. Reply briefly: what was made, the path(s), and what the person can ask to change (story beat, colours, timing, sounds).

@@ -1,15 +1,19 @@
 ---
 name: stickman-visual-short
-description: Make a vertical 9:16 stickman cartoon "visual gag" short (8-30 s, no talking needed) like the rain-umbrella / desert-water reference - two round-head stickmen in colored shirts, a setup scene, a time-skip, a role-reversal payoff. Covers idea, video script, visual plan, audio script, and a FREE-only Python pipeline (FLUX/Qwen-Image -> Wan2.2/LTX-Video -> Chatterbox/Kokoro, Stable Audio/MMAudio, ACE-Step -> ffmpeg) with ready scripts. Use for "stickman video", "cartoon visual short", "like this video", "who laughs last" style reels, or when /visual-short is run.
+description: Claude makes a complete vertical 9:16 stickman cartoon "visual gag" short (8-30 s, MP4 with sound) by itself - no AI image/video models, no GPU, no paid tools, nothing to install on the user's computer. Two round-head stickmen in colored shirts, a setup, a time-skip, a role-reversal payoff (like the rain-umbrella / desert-water reference). Claude writes the script, visual plan and audio plan, draws and animates the characters with code (SVG + GSAP in HyperFrames), synthesizes all sound effects and music with Python, renders the MP4 in its cloud container, and checks it. Use for "stickman video", "cartoon visual short", "like this video", "who laughs last" style reels, or when /visual-short is run.
 ---
 
-# Stickman Visual Short
+# Stickman Visual Short (made 100% by Claude)
 
-Make short, silent-comedy cartoon reels that tell a story **with pictures only**: one smart character, one mocking character, a time-skip, and a payoff where the tables turn. The viewer gets it with the sound off; sound only makes it funnier.
+Silent-comedy cartoon reels that tell a story **with pictures only**: one smart character, one mocking character, a time-skip, a payoff where the tables turn. The joke works with the sound off; sound makes it funnier.
 
-Reference: `references/reference-contact-sheet.jpg` (20 frames across the 11 s source).
+**The person only needs Claude.** Claude does every step in its own cloud container: the art is drawn with code (flat cartoon style, which is exactly this genre's look), animated with a joint rig, the sound is synthesized, and HyperFrames renders the MP4 (~1 min for 12 s on CPU). No image/video AI model, no GPU, no downloads of models, no paid service.
 
-## 1. What the reference video is (copy this formula)
+- Reference look: `references/reference-contact-sheet.jpg` (20 frames of the original 11 s video).
+- Working template: `template/` (a finished example film: "Who Laughs Last", rain -> desert). Copy it for every new video.
+- Optional AI-model route for people with a GPU: `references/gpu-pipeline.md` (not needed).
+
+## 1. The formula (from the reference video)
 
 | Item | Reference |
 |---|---|
@@ -29,18 +33,18 @@ Reference: `references/reference-contact-sheet.jpg` (20 frames across the 11 s s
 - One prop is the hero of the story (the umbrella). It must look the same in both shots except the one changed detail (the tap).
 - Saturated, high contrast, readable on a phone at thumbnail size.
 
-## 2. Workflow
+## 2. How Claude makes a video (follow in order)
 
-1. **Idea** -> one-line gag: "A does ___ (looks dumb), B mocks; LATER ___, A wins, B ___." Good themes: weather/season flip (rain->drought, summer->winter), saving vs spending, studying vs partying, planting a tree, building a roof, charging a phone, packing food. Keep it universal and wordless.
-2. **Script** (§3) -> 2-4 shots, 8-30 s, every beat with a time and an action you can SEE.
-3. **Visual plan** (§4) -> character sheet, one keyframe image per shot, one motion prompt per shot.
-4. **Generate images** (§6 models, `make_images.py`) -> character sheet first, then keyframes using the sheet as reference so faces/shirts/prop stay identical.
-5. **Image-to-video** (`make_video.py`) -> each keyframe into a 5-10 s clip. Generate 3-4 takes per shot, keep the best.
-6. **Audio** (§5, `make_audio.py`) -> SFX cue sheet + music bed (+ optional voice line / caption).
-7. **Assemble** (§7, `assemble.py`) -> cut, add audio, optional caption hook, export 1080x1920 MP4.
-8. **QA** (§8).
-
-Use the `/visual-short <idea>` command to produce steps 1-3 + the audio script in one file.
+1. **Idea** - one wordless gag: "A does ___ (looks dumb), B mocks; LATER ___, A wins, B ___." (`/visual-short` with no idea = 10 ideas first.)
+2. **Write the plan** in `shorts/<slug>/PLAN.md`: video script (§3), visual plan (§4), audio script (§5). Show it to the person and wait for OK unless they said "just make it".
+3. **Copy the template:** `mkdir -p shorts/<slug> && cp -r .claude/skills/stickman-visual-short/template/. shorts/<slug>/`
+4. **Edit `tools/build.py`** (the film): keep `JS`, `Scene`, `write_index`; rewrite `shot1()`, `shot2()` ... and the `S1, S2` lengths, positions and `cue()` calls from your plan. Add new props/backgrounds/faces to `tools/rig.py` when the story needs them (§6). New sound names go in `tools/sound.py` `SOUNDS`.
+5. **Build:** `cd shorts/<slug> && python3 tools/build.py && python3 tools/sound.py` (needs `pip install numpy scipy soundfile`).
+6. **Check:** `npx --yes hyperframes@0.9.38 check --json` -> fix every error (a gauge/pivot warning on a falling body is OK).
+7. **Look:** `npx --yes hyperframes@0.9.38 snapshot --at 0.5,<each beat>,<end-0.1> --no-end -o <scratchpad>/snap` and READ the contact sheet. Fix anything that does not read at phone size: overlapping characters, props floating off hands, faces wrong, empty frame. Repeat 5-7 until it is right.
+8. **Render:** `npx --yes hyperframes@0.9.38 render -o renders/<slug>.mp4 --quality delivery --quiet` (1080x1920, 30 fps, H.264 + AAC).
+9. **Verify the file:** `ffprobe` (size, fps, duration) + a tiled frame sheet from the MP4 (`ffmpeg -i renders/<slug>.mp4 -vf "fps=12/<dur>,scale=240:-1,tile=6x2" -frames:v 1 sheet.jpg`) and look at it; loudness with `ffmpeg -af ebur128` (aim -14 to -12 LUFS).
+10. **Deliver:** send the MP4 to the person (SendUserFile), commit + push `shorts/<slug>/` (not `.hyperframes/`, `node_modules/`).
 
 ## 3. Video script template
 
@@ -62,121 +66,66 @@ SHOT 2  PAYOFF  3.0-11.0 s  <same characters, opposite conditions>
 
 Rules: the gag must be clear in the first 1 s of each shot; never more than one new idea per beat; the payoff shot is 2-3x longer than the setup; end on the loser's worst moment (loop-friendly).
 
-## 4. Visual plan template (prompts)
+## 4. Visual plan template
 
-**Character sheet prompt (generate once, reuse):**
-```
-2D cartoon character sheet, two stickman characters side by side, front and side view,
-pure white round heads with simple expressive faces, thick clean black outlines, black stick arms
-and legs, black mitten hands, character 1 wears a plain green t-shirt, character 2 wears a plain
-blue t-shirt, flat bright colors, white background, consistent proportions, vector-like clean lineart
-```
+For each shot write what Claude will DRAW and ANIMATE (it maps 1:1 to `build.py`):
 
-**Keyframe prompt pattern (one per shot):**
 ```
-Vertical 9:16 2D cartoon illustration, thick clean black outlines, flat bright colors.
-[SCENE: stormy grey sky with heavy rain, wet street with puddles and reflections].
-Left: stickman with white round head and green t-shirt [ACTION + PROP + EXPRESSION].
-Right: stickman with white round head and blue t-shirt [ACTION + PROP + EXPRESSION].
-Side view, full body, both standing on the same ground line in the middle of the frame,
-large sky above, detailed ground below. Funny, expressive, high contrast.
-Negative: realistic, 3D, photo, extra limbs, hair, nose, text, watermark, blurry, cropped feet
+SHOT 2  PAYOFF  3.0-11.5 s   background: sky_sunny + sun + clouds + desert + dead_tree
+  HERO  (green, x 290, facing right)  props: umbrella_bowl with tap (behind), mug in back hand (back_arm_front)
+        0.35 fill: stream grows, mug water rises      1.8 raise mug -> face drink -> gulps -> lower -> bliss
+        whole shot: walk(…, 0.62 s period)
+  RIVAL (blue, x 800, facing left = toward hero)      pose: torso lean 16, arms hanging, face thirsty, sweat on
+        3.0 face cry   4.7 kneel (thighs -60, knees 105, body down 104)   6.3 fall (body rotate 72) -> face out
+  SOUND CUES  pour 3.35, gulp x3, ahh, whimper 6.0, thud_small 8.1, thud 9.8, trombone 9.95, desert loop from 3.0
 ```
-
-**Image-to-video motion prompt pattern:**
-```
-Static camera. Both stickmen walk in place to the right with a bouncy cartoon walk cycle.
-[A: specific motion, e.g. "raises the mug to his mouth and drinks, then smiles"].
-[B: specific motion, e.g. "sweats, tongue hangs out, tears fall, he drops to his knees and falls flat"].
-[Environment motion: "heavy rain falls, ripples in puddles" / "heat haze shimmers"].
-Smooth 2D cartoon animation, consistent characters, no camera movement, no new objects.
-```
-
-Keep motion prompts to 1-3 actions per clip. For a long payoff (8 s+), make 2 clips: first clip's last frame -> second clip's start image (`make_video.py` does this chaining automatically for long shots).
+Make sure every story beat is a visible change in pose, face or prop. Keep 1-3 actions per character per beat.
 
 ## 5. Audio script template
 
 ```
-MUSIC: <genre, mood, tempo, instruments>, e.g. "playful cartoon pizzicato + ukulele, 120 BPM,
-       switches to sad trombone wah-wah at the fall". Bed at -20 to -24 LUFS, ducks under SFX.
-VOICE (optional): none | one hook line | short laughs/grunts only (no language barrier = global reach)
+MUSIC: bpm, mood per shot, where it stops (sound.py music(): pizzicato melody A -> melody B + shaker at the cut,
+       cuts dead at the punchline). Keep it under the effects.
+VOICE: none. Only wordless sounds (laughs, gulps, "ahh", whimpers) = no language barrier, works worldwide.
 
-SFX CUE SHEET
- time   | sound                              | source / prompt
- 0.0    | rain loop heavy + distant thunder  | Stable Audio Open / MMAudio or CC0 file
- 1.5    | mocking cartoon laugh "ha-ha-ha!"  | Chatterbox (exaggeration 0.9) or CC0 file
- 2.8    | whoosh / time-skip swoosh          | library
- 3.0    | desert wind, cicadas, heat         | MMAudio prompt
- 3.5    | water tap pouring into metal mug   | MMAudio from the clip
- 5.0    | gulp gulp + "ahhh" satisfied        | voice or library
- 8.0    | dry groan, crying whimper           | voice
- 9.8    | body thud on dirt + sad trombone    | library
+ SFX CUE SHEET  (name = function in tools/sound.py; new name = write a new function)
+ time   | what we hear                       | sound.py name
+ 0.0    | heavy rain loop + distant thunder  | rain, thunder
+ 0.3    | mocking cartoon laugh "ha-ha-ha!"  | laugh  (x3)
+ 2.8    | time-skip swoosh                   | whoosh
+ 3.0    | desert wind, cicadas               | desert (loop)
+ 3.35   | water pouring into metal mug       | pour
+ 5.2    | gulp gulp gulp + "ahhh"            | gulp x3, ahh
+ 6.0    | crying whimper                     | whimper
+ 9.8    | body thud + sad trombone           | thud, trombone
 ```
 Put every SFX on the exact frame its action happens (1 frame after the picture is fine). Loudness: final mix about -14 LUFS, true peak -1 dBTP.
 
-## 6. Free models (open source, GitHub + Python) - FREE ONLY, no paid tools
+## 6. The toolkit (template/tools)
 
-Every step runs from Python with the scripts in `scripts/`. All weights download free from Hugging Face.
+**`rig.py` - art + rig.** Canvas 1080x1920. Everything returns SVG strings.
+- `character(pid, x, y, shirt, scale, facing, pose, face, faces, hand_f, hand_b, behind, back_arm_front)` - feet at (x,y). `facing=-1` mirrors (to face the other character). Joints with ids `pid-thL/thR` (hips), `pid-shL/shR` (knees), `pid-arF/arB` (shoulders), `pid-faF/faB` (elbows), `pid-torso`, `pid-head`, whole body `pid`. Angle 0 = limb hanging down; negative = forward. Default scale 1.2 (about 700 px tall), ground y ~1400.
+- `fk(shoulder_x, upper, fore_rel)` -> hand position, to put props exactly in a hand (pole of an umbrella, rope, sign). Props that move with the hand go in `hand_f`/`hand_b` (forearm space, hand at 0,0).
+- Faces (only one visible at a time, switch with `face()`): neutral, smile, bliss, laugh, annoyed, worried, thirsty, cry, shock, drink, out. Sweat drops: `#pid-sweat`. Add a face = add an entry to `FACES`.
+- Props: `umbrella_up`, `umbrella_bowl` (with water level + tap), `pole`, `mug` (with water level). Backgrounds: `sky_rain`, `storm_clouds`, `rain` (looping), `wet_street` (puddle ripples), `sky_sunny`, `sun` (spinning rays), `cloud`, `desert` (Voronoi cracked earth), `dead_tree`. New scene types (snow, city, classroom, kitchen, night) = new functions in the same flat style: thick `#1E1B24` outlines (5-7 px), flat fills, one soft shadow.
 
-| Step | Model (GitHub) | Python | Licence (for monetised videos) | VRAM |
-|---|---|---|---|---|
-| Keyframe images | **FLUX.1-schnell** (black-forest-labs/flux) | diffusers `FluxPipeline` | Apache-2.0 - commercial OK | ~12 GB w/ offload |
-| Keyframe images (better) | **Qwen-Image** (QwenLM/Qwen-Image) | diffusers `QwenImagePipeline` | Apache-2.0 | 24 GB+ w/ offload, 64 GB RAM |
-| Same characters in shot 2 | **Qwen-Image-Edit-2509** | diffusers `QwenImageEditPlusPipeline` | Apache-2.0 | 24 GB+ w/ offload |
-| Image -> video (default) | **Wan2.2-TI2V-5B** (Wan-Video/Wan2.2) | diffusers `WanImageToVideoPipeline` | Apache-2.0 | 24 GB (less with offload, slower) |
-| Image -> video (best) | **Wan2.2-I2V-A14B** | same | Apache-2.0 | 48-80 GB |
-| Image -> video (fast / small GPU) | **LTX-Video 2B** (Lightricks/LTX-Video) | diffusers `LTXImageToVideoPipeline` | LTX open licence (free) | 12-16 GB |
-| Image -> video (6 GB GPU, long) | **FramePack** (lllyasviel/FramePack) | its own Gradio app | Apache-2.0 | 6 GB |
-| Voice / laughs / cries | **Chatterbox** (resemble-ai/chatterbox) | `pip install chatterbox-tts` | MIT | GPU (CPU slow) |
-| Short voice lines | **Kokoro-82M** (hexgrad/kokoro) | `pip install kokoro` | Apache-2.0 | **CPU is fine** |
-| Sound effects from text | **Stable Audio Open 1.0** | diffusers `StableAudioPipeline` | Stability Community (free < $1M/yr), needs free HF login | 8 GB |
-| Sound effects synced to video | **MMAudio** (hkchengrex/MMAudio) | `demo.py` | code MIT, **weights non-commercial** | 6-8 GB |
-| Music | **ACE-Step 1.5** (ace-step/ACE-Step-1.5) | `acestep` Python API | MIT - commercial OK | 4-8 GB |
-| Upscale (optional) | **Real-ESRGAN** `realesr-animevideov3` | `realesrgan` / ncnn binary | BSD-3 | any |
-| Smoother motion (optional) | **Practical-RIFE** (hzwer/Practical-RIFE) | `inference_video.py` | MIT | any |
-| Cut, mix, export | **ffmpeg** | `scripts/assemble.py` | free | CPU |
-| Titles / captions (optional) | **HyperFrames** (heygen-com/hyperframes, in this repo) | `npx hyperframes` | Apache-2.0 | CPU |
+**`build.py` - JS animation helpers** (all deterministic, HyperFrames-safe):
+- `walk(pid, t0, t1, period, amp, arm, armAmp, armBase)` - walk in place (legs, knee bend, body bob, optional arm swing).
+- `rotT(id, from, to, t, dur, ease)` - rotate one joint. `body(pid, x0,y0,r0, x1,y1,r1, t, d)` - move/rotate the whole body (kneel, jump, fall: rotate about the feet).
+- `face(pid, from, to, t)`, `show/hide/fade`, `grow(id, attrsFrom, attrsTo, t, d)` (water levels, streams, bars), `drift(id, ...)` (rain, sweat; finite repeats).
+- `cue(t, "sound", gain)` in Python registers a sound at time t -> `tools/cues.json`.
 
-If you will earn money from the videos, use the "commercial OK" rows (FLUX-schnell, Qwen, Wan2.2, Chatterbox, Kokoro, ACE-Step) and make SFX with Stable Audio Open or free CC0 sound files (put `"file": "x.wav"` in the plan). Avoid MMAudio and MusicGen weights for monetised work (non-commercial).
+**`sound.py` - sound with numpy only.** Effects: rain, thunder, laugh, whoosh, desert (wind + cicadas), pour, gulp, ahh, whimper, thud, thud_small, trombone (sad "wah-wah"). Loops (`rain`, `desert`) run until the next loop starts. Music: Karplus-Strong pizzicato + bass, bouncy major melody, switches melody + shaker at the first `mood_change`, stops dead at `"stop"` so the punchline sound lands alone. New effect = small function (noise + filters + envelope, or `vowel()` for voice-like grunts/laughs) added to `SOUNDS`.
 
-### What you need (all free)
+**Rules that keep it looking like the genre:** static camera; side-view walk in place; characters 45-55 % of frame height, standing on one ground line in the middle; big sky with weather on top; textured ground below; hard cut between shots; the prop that is the joke is drawn the same in both shots except the one changed detail; the loser gets worse in 3-4 visible stages and the last pose holds 1 s+.
 
-1. **An NVIDIA GPU.** Options:
-   - Your own PC: RTX 3060 12 GB = LTX + FLUX-schnell + audio; RTX 3090/4090 24 GB = everything with Wan2.2-5B.
-   - **Kaggle Notebooks** (free, 2x T4 16 GB, ~30 GPU h/week, 29 GB RAM) - best free option. Use `--model ltx` or `--model wan5b --offload sequential --dtype fp16`, FLUX-schnell images.
-   - **Google Colab free** (T4 16 GB, 12 GB RAM) - works for LTX, FLUX-schnell (`--offload sequential`), Kokoro, Chatterbox, ACE-Step, Stable Audio. Too little RAM for Qwen-Image and Wan 14B.
-   - No GPU at all: only Kokoro voice and assemble.py run on CPU; image/video generation is not practical.
-2. **Python 3.10-3.12**, **ffmpeg**, `git`, ~60-100 GB free disk for model downloads (Kaggle/Colab: use one video model per session).
-3. **A free Hugging Face account** + `huggingface-cli login` (needed for Stable Audio Open; speeds up downloads).
-4. Install: `pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124` then `pip install -r scripts/requirements.txt`; `apt install ffmpeg espeak-ng`; clone ACE-Step-1.5 (music) and optionally MMAudio.
-
-## 7. Run the pipeline (Python)
-
-The whole video is described in one JSON file - copy `scripts/shots.example.json` (it is the rain/desert reference video) to `shorts/<slug>/plan.json` and edit it. `{hero}` / `{rival}` in prompts are replaced from `characters`. Output goes to `shorts/<slug>/build/`.
-
-```bash
-cd .claude/skills/stickman-visual-short/scripts
-P=../../../../shorts/<slug>/plan.json
-
-python make_images.py $P --takes 3                 # FLUX-schnell keyframes -> build/images/s1_take1..3.png
-python make_images.py $P --model qwen --edit       # (24 GB+) shot 2 edited from shot 1 = same characters
-#   look at the takes, copy the best one to build/images/<shot>.png
-python make_video.py  $P --takes 2                 # Wan2.2-5B clips  (--model ltx on T4 / 12 GB)
-#   watch build/clips/*_take*.mp4, copy the best to build/clips/<shot>.mp4
-python make_audio.py  $P voice                     # Kokoro / Chatterbox lines
-python make_audio.py  $P sfx                       # Stable Audio Open SFX   (or: --mmaudio ~/MMAudio)
-python make_audio.py  $P music --ace ~/ACE-Step-1.5
-python assemble.py    $P --card "3 MONTHS LATER" --card-at 2.8   # -> build/final.mp4 1080x1920 30fps -14 LUFS
-```
-
-Tips: low VRAM -> `--offload sequential`; T4/older GPU -> `--dtype fp16` (if frames come out black, use `--dtype fp32` for the VAE-heavy step or switch to LTX); faster drafts -> `--steps 20`. A shot longer than one clip (Wan-5B: 5 s, LTX: 6.7 s, Wan-14B: 5 s) is chained automatically from the previous segment's last frame. FramePack (6 GB GPUs) is a separate app: load `build/images/<shot>.png`, paste the motion prompt, save the mp4 as `build/clips/<shot>.mp4`, then continue with the audio steps.
-
-## 8. QA checklist
+## 7. QA checklist
 
 - [ ] Sound OFF: is the joke clear? (If not, fix the picture, not the audio.)
 - [ ] Frame 0 already shows both characters and the conflict (scroll-stopping thumbnail).
-- [ ] Same shirt colors, same prop design, same head shape in every shot; no extra fingers/limbs, no melted faces.
+- [ ] Same shirt colors, same prop design in every shot; props sit in the hands; characters do not overlap at the end pose.
 - [ ] No camera drift unless planned; feet on the ground line.
-- [ ] Each SFX lands on its action; music ducks under key SFX; final -14 LUFS.
+- [ ] Each SFX lands on its action (cue = picture time); music stops for the punchline; final -14 to -12 LUFS.
+- [ ] `hyperframes check` passes; you LOOKED at the snapshot sheet and at frames from the rendered MP4.
 - [ ] Ends on the punchline pose; 8-30 s; 1080x1920 H.264 MP4.
 - [ ] Original idea and characters (do not copy a named show's characters or another creator's exact video).
